@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="fuente-comun.js"></script>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#F3F5F4;--surface:#FFFFFF;--ink:#132A36;--muted:#5C6F78;--line:#D8DFE0;--oc:#3B5B8C;--oc-soft:#E3EAF4;--ex:#16786A;--ex-soft:#DDEFEA;--warn:#B5651D;--sub:#EEF2F1;--focus:#2C6FD1}
@@ -425,7 +426,9 @@ est.addEventListener('change',update);
 // ---------- datos compartidos (Cloudflare Pages Functions + KV) ----------
 const API='api/data';
 const ADMIN=new URLSearchParams(location.search).has('admin');
-if(ADMIN){$('btnPick').hidden=false;$('btnReload').hidden=false;}
+// El Excel ya no se carga aquí: se publica UNA vez desde el Administrador de dashboard-compras
+// y este reporte lo lee de /api/fuente (ver fuente-comun.js). /api/data queda solo como respaldo.
+const MSG_DONDE='El Excel de Seguimiento de Solpeds se publica una sola vez desde el Administrador del Dashboard de compras y se actualiza aquí automáticamente.';
 function fmtDate(s){try{return new Date(s).toLocaleString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return s;}}
 function setSource(meta,pending){
  let s=(meta.name||'Datos')+' · '+(meta.rows||R.length).toLocaleString('en-US')+' registros de OC';
@@ -450,13 +453,17 @@ async function publishData(payload){
 }
 (async()=>{
  try{
+  const F=await FuenteComun.cargar().catch(e=>{console.warn('Excel compartido no disponible.',e);return null;});
+  if(F){const o=parseRows(FuenteComun.aMatriz(F));D=o.d;R=o.r;setSource({name:F.archivo,rows:R.length,uploadedAt:F.publicado},false);initUI();return;}
+ }catch(e){console.error('No se pudo leer el Excel compartido.',e);}
+ try{
   const res=await fetch(API,{cache:'no-store'});
   if(res.ok){const o=await res.json();D=o.d;R=o.r;setSource(o.meta||{},false);initUI();return;}
   if(res.status===404&&(res.headers.get('content-type')||'').includes('json')){
-   emptyState('Todavía no hay datos publicados',ADMIN?'Carga el Excel de Seguimiento de Solpeds para publicarlo. Quien abra el enlace lo verá sin cargar nada.':'El administrador aún no ha publicado el reporte. Vuelve a intentarlo más tarde.');return;}
+   emptyState('Todavía no hay datos publicados',ADMIN?MSG_DONDE:'El administrador aún no ha publicado el reporte. Vuelve a intentarlo más tarde.');return;}
   throw new Error('api');
  }catch(e){
-  emptyState(ADMIN?'Carga el reporte de Seguimiento de Solpeds':'No se pudo obtener el reporte',ADMIN?'No hay conexión con el almacenamiento del sitio. Puedes cargar un archivo para verlo solo en tu equipo.':'Revisa tu conexión y recarga la página. Si el problema sigue, avisa al administrador.');
+  emptyState('No se pudo obtener el reporte','Revisa tu conexión y recarga la página. Si el problema sigue, avisa al administrador.'+(ADMIN?' '+MSG_DONDE:''));
  }
 })();
 })();

@@ -16,6 +16,12 @@
     { "binding": "REPORTE", "id": "PEGA_AQUI_EL_ID_DEL_KV" }
   ],
 
+  // Excel compartido con dashboard-compras y tablero-compras (solo lectura).
+  // Es el mismo bucket R2 del Worker dashboard-compras, que es donde se publica.
+  "r2_buckets": [
+    { "binding": "FUENTE", "bucket_name": "dashboard-compras-data" }
+  ],
+
   // La clave de carga NO va aquí: se crea como secreto UPLOAD_TOKEN
   // en Settings → Variables and Secrets del Worker.
 

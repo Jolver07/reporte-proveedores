@@ -5,6 +5,17 @@ Tú cargas el Excel de Seguimiento de Solpeds una vez y queda guardado. Cualquie
 - Visitantes: `https://reporte-proveedores.jolvera-dbb.workers.dev`
 - Administrador: `https://reporte-proveedores.jolvera-dbb.workers.dev/?admin`
 
+## Datos: un solo Excel para los 3 tableros
+
+El Excel "Seguimiento de Solpeds" se publica **una sola vez**, desde el Administrador de
+**dashboard-compras** (cargar Excel → clave → *Publicar en la nube*). Queda guardado en el bucket R2
+`dashboard-compras-data` como `fuente-comun.json`, y este Worker lo lee de ahí por `/api/fuente`
+(binding `FUENTE` en `wrangler.jsonc`). Cada tablero sigue haciendo sus propios cálculos.
+
+- `reporte-proveedores-worker/public/fuente-comun.js` es el mismo archivo en los 3 repositorios; si se cambia en uno, copiarlo a los otros.
+- Mientras no exista `fuente-comun.json`, la página muestra los datos que tenía publicados antes.
+- Los 3 Workers deben estar en la misma cuenta de Cloudflare (la del bucket).
+
 ## Estructura del repositorio
 
 ```

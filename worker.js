@@ -1,6 +1,9 @@
 // Worker del reporte de compras por proveedor.
 // - /api/data  GET: entrega los datos guardados en KV.
 //              PUT: guarda nuevos datos (requiere la clave UPLOAD_TOKEN).
+// - /api/fuente GET: Excel "Seguimiento de Solpeds" compartido con dashboard-compras
+//              y tablero-compras (bucket R2 enlazado como FUENTE). Se publica
+//              solo desde el Administrador de dashboard-compras.
 // - Todo lo demás: archivos de la carpeta public/ (index.html, etc.).
 const KEY = 'reporte';
 const MAX_BYTES = 24 * 1024 * 1024; // límite de KV: 25 MiB por valor
@@ -28,6 +31,16 @@ async function getData(env) {
   });
 }
 
+async function getFuente(env) {
+  const h = { 'x-fuente-comun': '1', 'cache-control': 'no-store' };
+  if (!env.FUENTE) return new Response(JSON.stringify({ error: 'Falta enlazar el bucket R2 FUENTE.' }), { status: 500, headers: { ...h, 'content-type': 'application/json; charset=utf-8' } });
+  const obj = await env.FUENTE.get('fuente-comun.json');
+  if (!obj) return new Response(JSON.stringify({ error: 'Todavía no se ha publicado el Excel compartido.' }), { status: 404, headers: { ...h, 'content-type': 'application/json; charset=utf-8' } });
+  return new Response(obj.body, {
+    headers: { ...h, 'content-type': 'application/json; charset=utf-8', 'x-fuente-publicado': obj.customMetadata?.publicado || obj.uploaded.toISOString() },
+  });
+}
+
 async function putData(request, env) {
   if (!env.UPLOAD_TOKEN) return json({ error: 'Falta configurar el secreto UPLOAD_TOKEN.' }, 500);
   const auth = request.headers.get('authorization') || '';
@@ -51,6 +64,10 @@ async function putData(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === '/api/fuente') {
+      if (request.method === 'GET') return getFuente(env);
+      return json({ error: 'Método no permitido. El Excel se publica desde dashboard-compras.' }, 405);
+    }
     if (url.pathname === '/api/data') {
       if (!env.REPORTE) return json({ error: 'Falta enlazar el KV namespace REPORTE.' }, 500);
       if (request.method === 'GET') return getData(env);
