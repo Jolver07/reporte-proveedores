@@ -16,6 +16,10 @@ El Excel "Seguimiento de Solpeds" se publica **una sola vez**, desde el Administ
 - Mientras no exista `fuente-comun.json`, la página muestra los datos que tenía publicados antes.
 - Los 3 Workers deben estar en la misma cuenta de Cloudflare (la del bucket).
 
+## Especialistas
+
+Si el Excel trae la columna **Especialista**, el reporte muestra el filtro *Especialista*, la pestaña *Por especialista* (proveedores, OC, dólares en OC, ejecutados y % ejecutado por especialista) y la columna Especialista en *Por negociación (OC)*. Si no la trae, esas opciones se ocultan.
+
 ## Estructura del repositorio
 
 ```
