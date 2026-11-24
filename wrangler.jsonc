@@ -16,6 +16,12 @@
     { "binding": "REPORTE", "id": "9d102c3dd208445d9dd31a89507bfa19" }
   ],
 
+  // Límite del agente (/api/agente): máximo 20 llamadas por minuto por visitante.
+  // La clave de Claude va como secreto ANTHROPIC_API_KEY en Settings → Variables and Secrets.
+  "ratelimits": [
+    { "name": "LIMITE_AGENTE", "namespace_id": "1001", "simple": { "limit": 20, "period": 60 } }
+  ],
+
   // Excel compartido con dashboard-compras y tablero-compras (solo lectura).
   // Es el mismo bucket R2 del Worker dashboard-compras, que es donde se publica.
   "r2_buckets": [

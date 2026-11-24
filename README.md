@@ -56,3 +56,7 @@ Cloudflare Zero Trust → Access → Applications → Self-hosted, dominio `repo
 | "Falta configurar el secreto UPLOAD_TOKEN" | Falta el paso 5. |
 | "Clave incorrecta" | La clave no coincide con `UPLOAD_TOKEN` (revisa espacios). |
 | El despliegue falla con "KV namespace not found" | El ID en `wrangler.jsonc` no corresponde a un namespace de tu cuenta. |
+
+## Agente de preguntas
+
+Los visitantes pueden hacerle preguntas al reporte desde el botón **"Pregúntale al agente"**. Ver [AGENTE.md](AGENTE.md) para activarlo (clave `ANTHROPIC_API_KEY` como secreto del Worker).
