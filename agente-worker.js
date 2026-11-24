@@ -155,6 +155,24 @@ function validar(body) {
   return null;
 }
 
+// Claude solo acepta su razonamiento (bloques "thinking") con las mismas
+// instrucciones con que lo generó, y las instrucciones incluyen el texto de la
+// página, que cambia entre preguntas (filtros, pestañas). Por eso se conserva
+// solo el razonamiento de la pregunta en curso y se quita el de las anteriores.
+function quitarRazonamientoAnterior(mensajes) {
+  let inicio = 0;  // índice de la última pregunta escrita por la persona
+  mensajes.forEach((m, i) => {
+    if (m.role !== 'user') return;
+    const esPregunta = typeof m.content === 'string' || m.content.some((b) => b.type === 'text');
+    if (esPregunta) inicio = i;
+  });
+  return mensajes.map((m, i) => {
+    if (i >= inicio || m.role !== 'assistant' || !Array.isArray(m.content)) return m;
+    const content = m.content.filter((b) => b.type !== 'thinking' && b.type !== 'redacted_thinking');
+    return { role: m.role, content: content.length ? content : [{ type: 'text', text: '(sin texto)' }] };
+  });
+}
+
 /** Atiende POST /api/agente. `reporte` = { nombre, descripcion } del reporte. */
 export async function manejarAgente(request, env, reporte) {
   if (request.method === 'GET') return respuesta({ activo: !!env.ANTHROPIC_API_KEY });
@@ -181,6 +199,7 @@ export async function manejarAgente(request, env, reporte) {
   const error = validar(body);
   if (error) return respuesta({ error }, 400);
   const contexto = typeof body.contexto === 'string' ? body.contexto.slice(0, MAX_CONTEXTO) : '';
+  const mensajes = quitarRazonamientoAnterior(body.mensajes);
 
   let r;
   try {
@@ -196,7 +215,7 @@ export async function manejarAgente(request, env, reporte) {
         max_tokens: MAX_TOKENS_RESPUESTA,
         system: instrucciones(reporte, contexto),
         tools: HERRAMIENTAS,
-        messages: body.mensajes,
+        messages: mensajes,
       }),
     });
   } catch (e) {
