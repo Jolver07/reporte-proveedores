@@ -512,6 +512,9 @@
         var usos = r.content.filter(function (b) { return b.type === 'tool_use'; });
         if (r.stop_reason !== 'tool_use' || !usos.length) {
           var respuesta = r.content.filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('\n\n').trim();
+          if (r.stop_reason === 'max_tokens') {
+            respuesta = (respuesta ? respuesta + '\n\n' : '') + '*(La respuesta quedó incompleta por su extensión. Pide un detalle más específico, por ejemplo menos filas o un periodo más corto.)*';
+          }
           estado.remove();
           agregarMensaje('agente', respuesta || 'No obtuve una respuesta. Intenta preguntar de otra forma.');
           return;
