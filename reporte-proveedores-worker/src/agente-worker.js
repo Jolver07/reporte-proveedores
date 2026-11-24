@@ -24,7 +24,7 @@ const MODELO_POR_DEFECTO = 'claude-sonnet-5-5';
 const MAX_CUERPO = 400 * 1024;     // tamaño máximo de cada pedido (caracteres)
 const MAX_MENSAJES = 60;           // mensajes de la conversación que se aceptan
 const MAX_CONTEXTO = 20000;        // texto de la página + estructura de los datos
-const MAX_TOKENS_RESPUESTA = 2048;
+const MAX_TOKENS_RESPUESTA = 16000; // incluye el razonamiento de Claude; solo se cobra lo usado
 
 // Herramientas que el agente puede usar. Las ejecuta el navegador sobre los
 // datos del Excel "Seguimiento de Solpeds" que la página ya tiene cargados.
