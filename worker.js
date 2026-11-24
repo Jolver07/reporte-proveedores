@@ -4,7 +4,14 @@
 // - /api/fuente GET: Excel "Seguimiento de Solpeds" compartido con dashboard-compras
 //              y tablero-compras (bucket R2 enlazado como FUENTE). Se publica
 //              solo desde el Administrador de dashboard-compras.
+// - /api/agente POST: agente de preguntas sobre el reporte (ver agente-worker.js).
 // - Todo lo demás: archivos de la carpeta public/ (index.html, etc.).
+import { manejarAgente } from './agente-worker.js';
+
+const REPORTE = {
+  nombre: 'Compras por proveedor — OC vs. ejecutado',
+  descripcion: 'Muestra, por proveedor, las órdenes de compra (OC) emitidas, los dólares en OC, lo ejecutado (ingresado a bodega) y el % ejecutado, con vistas por negociación (OC) y por especialista.',
+};
 const KEY = 'reporte';
 const MAX_BYTES = 24 * 1024 * 1024; // límite de KV: 25 MiB por valor
 
@@ -68,6 +75,7 @@ export default {
       if (request.method === 'GET') return getFuente(env);
       return json({ error: 'Método no permitido. El Excel se publica desde dashboard-compras.' }, 405);
     }
+    if (url.pathname === '/api/agente') return manejarAgente(request, env, REPORTE);
     if (url.pathname === '/api/data') {
       if (!env.REPORTE) return json({ error: 'Falta enlazar el KV namespace REPORTE.' }, 500);
       if (request.method === 'GET') return getData(env);
