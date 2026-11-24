@@ -138,7 +138,8 @@ function respuesta(obj, status = 200) {
 function bloquesValidos(content, role) {
   if (typeof content === 'string') return content.length > 0;
   if (!Array.isArray(content) || content.length === 0) return false;
-  const permitidos = role === 'user' ? ['text', 'tool_result'] : ['text', 'tool_use'];
+  // El asistente puede devolver bloques de razonamiento (thinking) que hay que reenviar tal cual
+  const permitidos = role === 'user' ? ['text', 'tool_result'] : ['text', 'tool_use', 'thinking', 'redacted_thinking'];
   return content.every((b) => b && typeof b === 'object' && permitidos.includes(b.type));
 }
 
