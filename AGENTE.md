@@ -28,6 +28,15 @@ Navegador (página del reporte)                Worker de Cloudflare             
 
 En **reporte-proveedores** los archivos están en `agente-worker.js` (raíz) y en `reporte-proveedores-worker/public/agente.js`.
 
+## Reglas del reporte (opcional, por repositorio)
+
+Si `index.html` define `window.AgenteReporteReglas = { firma(), texto(), columnas(F) }`, el agente:
+- recibe en su contexto el texto de `texto()`: las reglas oficiales de cálculo del reporte (exclusiones, SLA, excepciones, feriados, filtros de la pestaña activa);
+- puede consultar las columnas que devuelve `columnas(F)` (en dashboard-compras se llaman «Tablero: …»), calculadas fila por fila con las mismas funciones del reporte, así sus cifras cuadran con las de la pantalla;
+- vuelve a calcular esas columnas cuando cambia `firma()` (por ejemplo, al editar un parámetro SLA).
+
+Los reportes que no lo definen siguen funcionando igual.
+
 ## Puesta en marcha (una sola vez)
 
 ### 1. Crea la clave de Claude

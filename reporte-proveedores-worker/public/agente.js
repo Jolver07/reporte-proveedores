@@ -45,14 +45,67 @@
     window.FuenteComun.cargarOriginal = cargarOriginal;
   }
 
-  var cacheTabla = { F: null, T: null };
+  // Reglas opcionales del reporte: si la página define window.AgenteReporteReglas
+  // = { firma(), texto(), columnas(F) }, el agente recibe sus reglas de cálculo
+  // (texto) y columnas ya calculadas por la página ("Tablero: …"), para que sus
+  // cifras cuadren con las del reporte. Los reportes que no lo definen siguen igual.
+  function reglasReporte() {
+    var R = window.AgenteReporteReglas;
+    return R && typeof R === 'object' ? R : null;
+  }
+  function firmaReglas() {
+    var R = reglasReporte();
+    try { return R && typeof R.firma === 'function' ? String(R.firma()) : ''; } catch (e) { return ''; }
+  }
+
+  var cacheTabla = { F: null, T: null, firma: null };
   async function obtenerTabla() {
     if (!window.FuenteComun) throw new Error('La página no cargó fuente-comun.js.');
     var F = null;
     try { F = await (ultimaCarga || (ultimaCarga = window.FuenteComun.cargar())); } catch (e) { F = null; }
     if (!F) throw new Error('El Excel compartido no está disponible en esta página. Responde solo con lo visible en la página.');
-    if (cacheTabla.F !== F) cacheTabla = { F: F, T: crearTabla(F) };
+    var firma = firmaReglas();
+    if (cacheTabla.F !== F || cacheTabla.firma !== firma) {
+      var T = crearTabla(F);
+      agregarColumnasReporte(T, F);
+      cacheTabla = { F: F, T: T, firma: firma };
+    }
     return cacheTabla.T;
+  }
+
+  /** Añade a la tabla las columnas calculadas que entrega la página (si las hay). */
+  function agregarColumnasReporte(T, F) {
+    var R = reglasReporte();
+    if (!R || typeof R.columnas !== 'function') return;
+    var extra;
+    try { extra = R.columnas(F); } catch (e) { console.warn('Agente: no se pudieron calcular las columnas del reporte.', e); return; }
+    (extra || []).forEach(function (c) {
+      if (!c || !c.nombre || !c.valores || c.valores.length !== T.n) return;
+      var raw;
+      if (c.tipo === 'texto') {
+        var dict = [], idx = new Map();
+        var v = new Array(T.n);
+        for (var i = 0; i < T.n; i++) {
+          var x = c.valores[i];
+          if (x == null || x === '') { v[i] = null; continue; }
+          x = String(x);
+          var k = idx.get(x);
+          if (k === undefined) { k = dict.length; dict.push(x); idx.set(x, k); }
+          v[i] = k;
+        }
+        raw = { t: 's', dict: dict, v: v };
+      } else if (c.tipo === 'fecha') {
+        raw = { t: 'd', v: c.valores.map(function (d) { return d instanceof Date ? d.getTime() : (d == null ? null : d); }) };
+      } else {
+        raw = { t: 'n', v: c.valores };
+      }
+      var info = { nombre: String(c.nombre), indice: T.cols.length, tipo: c.tipo === 'texto' ? 'texto' : (c.tipo === 'fecha' ? 'fecha' : 'numero'), raw: raw, calculada: true };
+      if (raw.t === 's') info.get = function (i) { var k = raw.v[i]; return k == null ? null : raw.dict[k]; };
+      else if (raw.t === 'd') info.get = function (i) { var m = raw.v[i]; return m == null ? null : new Date(m); };
+      else info.get = function (i) { var x = raw.v[i]; return x == null ? null : x; };
+      T.cols.push(info);
+      T.porNombre[norm(info.nombre)] = info;
+    });
   }
 
   function norm(s) {
@@ -430,7 +483,7 @@
           extra += vacios ? '; ' + vacios + ' vacíos' : '';
         } else extra = 'sin valores';
       }
-      return '- ' + c.nombre + ' (' + c.tipo + '): ' + extra;
+      return '- ' + c.nombre + ' (' + c.tipo + (c.calculada ? ', calculada por el reporte' : '') + '): ' + extra;
     });
     T.esquema = 'Excel "' + (T.F.archivo || 'Seguimiento de Solpeds') + '", hoja "' + (T.F.hoja || '') + '": ' + T.n + ' filas' +
       (T.F.publicado ? ', publicado ' + fechaTxt(new Date(T.F.publicado)) : '') + '. Columnas:\n' + lineas.join('\n');
@@ -460,6 +513,11 @@
 
   async function contexto() {
     var partes = ['Reporte: ' + document.title + ' (' + location.origin + location.pathname + ')'];
+    var R = reglasReporte();
+    if (R && typeof R.texto === 'function') {
+      try { partes.push('Reglas de cálculo del reporte (definición oficial de sus cifras):\n' + R.texto()); }
+      catch (e) { console.warn('Agente: no se pudieron leer las reglas del reporte.', e); }
+    }
     try { partes.push('Estructura de los datos:\n' + esquema(await obtenerTabla())); }
     catch (e) { partes.push('Datos: ' + e.message); }
     partes.push('Texto visible de la página ahora mismo:\n' + textoPagina());
