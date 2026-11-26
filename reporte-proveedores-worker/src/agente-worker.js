@@ -23,7 +23,7 @@
 const MODELO_POR_DEFECTO = 'claude-sonnet-5-5';
 const MAX_CUERPO = 400 * 1024;     // tamaño máximo de cada pedido (caracteres)
 const MAX_MENSAJES = 60;           // mensajes de la conversación que se aceptan
-const MAX_CONTEXTO = 20000;        // texto de la página + estructura de los datos
+const MAX_CONTEXTO = 36000;        // reglas del reporte + estructura de los datos + texto de la página
 const MAX_TOKENS_RESPUESTA = 16000; // incluye el razonamiento de Claude; solo se cobra lo usado
 
 // Herramientas que el agente puede usar. Las ejecuta el navegador sobre los
@@ -116,7 +116,9 @@ Hoy es ${hoy}. Las personas que te escriben están viendo este reporte en su nav
 Cómo trabajar:
 - Responde siempre en español, de forma clara y breve, con las cifras concretas primero y luego el detalle.
 - Tienes dos fuentes: (1) el texto visible de la página (indicadores, filtros activos y tablas que la persona está viendo) y (2) las herramientas, que consultan las filas del Excel "Seguimiento de Solpeds" del que sale el reporte.
-- Si preguntan por una cifra que se ve en la página, usa la de la página. El reporte puede aplicar exclusiones, parámetros (por ejemplo SLA, compradores o grupos excluidos) o filtros que no conoces; si tu cálculo desde el Excel no coincide con la página, dilo y explica la posible causa en vez de corregir la página.
+- Si preguntan por una cifra que se ve en la página, usa la de la página.
+- Si el contexto trae «Reglas de cálculo del reporte», esas reglas son la definición oficial de cada indicador y debes aplicarlas siempre: exclusiones, SLA, días hábiles, feriados, mes de referencia y filtros. En la práctica: filtra primero la columna «Tablero: incluida» = "Si" y usa las columnas «Tablero: …» (estado SLA, días hábiles, SLA efectivo, USD ejecutado, estado OTIF, ciclo) en lugar de recalcular desde las fechas originales. Incluye filas excluidas solo si la persona lo pide expresamente, y avísalo. Si tu cifra no coincide con la de la pantalla, revisa primero si te faltó aplicar los filtros de la pestaña.
+- Si no hay reglas del reporte, ten en cuenta que puede aplicar exclusiones, parámetros o filtros que no conoces; si tu cálculo desde el Excel no coincide con la página, dilo y explica la posible causa en vez de corregir la página.
 - Para cualquier cifra que no esté en la página, usa las herramientas. Nunca inventes ni estimes números.
 - Antes de filtrar por un nombre (proveedor, comprador, sucursal, especialista, estado), confirma el valor exacto con valores_distintos si no estás seguro.
 - Indica qué filtros o supuestos usaste (periodo, estados incluidos, etc.).
